@@ -4,16 +4,16 @@
 # PHPrbl: PHP realtime black listing
 # Released under GNU GPL License version 2, see LICENSE for more info
 #
-# (c) Eelco Wesemann (eelco@init1.nl)
-# http://phprbl.init1.nl || http://eol.init1.nl
-# (Version 0.4, Oct 26 2005)
+# (c) Eelco Wesemann (eelco.wesemann@gmail.com)
+# http://phprbl.init1.nl || http://www.eelcowesemann.nl
+# (Version next, XXX  YY 2010)
 
 # Configuration section
 
 # The following aray contains the RBL services we want to use
 # Spamhaus and AHBL are tested to be quite fast, you can 
 # add your own, or remove unwanted services from the array.
-$rbl_services = array ('rbl.init1.nl', 'sbl-xbl.spamhaus.org', 'dnsbl.ahbl.org');
+$rbl_services = array ('sbl-xbl.spamhaus.org', 'dnsbl.ahbl.org');
 
 # set $mysql_enable to 1 if you want to log blocked hosts to mysql
 # please note that the table structure has changed between version 0.1 
