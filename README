@@ -17,46 +17,38 @@ I have used PHPrbl successfully in Mambo (http://www.mamboserver.com) and in
 b2evolution (http://b2evolution.net/). With both packages, the file rbl.php
 could be included in the top of the main index.php
 
-Logging to SQL:
-If you want to log IP addresses that have been blocked using PHPrbl, you need
-to create a table called `blocked` using the following structure:
+Usage of MySQL:
+PHPrbl can make use of MySQL for prechecking and referrer blocking based on
+keywords, to install the MySQL tables, use the command 
+mysql -u [your username] -p [databasename] < install-0.4.sql
+or use phpMyAdmin to upload install-0.4.sql.
+This installs the MySQL tables used, and adds some of the most referred to
+drugs, to be used by the keywords blocking feature.
 
--- 
--- Table structure for table `blocked`
--- 
 
-DROP TABLE IF EXISTS `blocked`;
-CREATE TABLE `blocked` (
-  `id` int(8) NOT NULL auto_increment,
-  `ip` varchar(15) NOT NULL default '',
-  `count` int(8) NOT NULL default '0',
-  `lastseen` varchar(11) NOT NULL default '',
-  `service` varchar(255) NOT NULL default '',
-  `referer` varchar(255) default NULL,
-  PRIMARY KEY  (`id`),
-  UNIQUE KEY `ip` (`ip`)
-) TYPE=MyISAM;
-
---
--- End table structure
---
-
-Please note that the logging to MySQL has been completely rewritten between
-version 0.1 and 0.2, and the structure of the table is totally different,
-therefore I chose to add the "DROP TABLE IF EXISTS". This means all previously
-gathered data will be lost. This also means that you will need to rewrite any
-queries you used to display blocked hosts.
-
-From version 0.3, PHPrbl support prechecking of IP addresses. This will only
+From version 0.3, PHPrbl supports prechecking of IP addresses. This will only
 work with MySQL enabled. Set $mysql_precheck to 1 in rbl.php to enable this 
 feature.
 When enabled, the client IP address is checked against the database. Previously
 blocked IP addresses will now be blocked before a DNS lookup is done. On really
 busy servers this might improve performance.
 
+From version 0.4, PHPrbl supports blocking based on keywords that are matched 
+against the given referrer string. This feature only works with MySQL enabled.
 
+Upgrading the MySQL structure from version 0.3.1 to version 0.4:
+Use the following command: 
+mysql -u [your username] -p [databasename] < upgrade-0.3.1_to0.4.sql
+or use phpMyAdmin to upload upgrade-0.3.1_to0.4.sql
+
+PHPrbl Admin Area:
+Version 0.4 of PHPrbl finally contains some administrative functionality.
+To enable the Admin Area, edit the file phprbladmin/config.php and remove the
+line that says: "exit("Hehe, you haven't read the README :P");"
+Set $enable_admin_area to 1 and change $admin_user and $admin_pass to your liking.
+Please, please don't leave the admin user and password on the default, or the SPAM 
+gods will spank you. (version 0.4 only supports adding and deleting keywords)
 
 TODO:
-* Find a bigger list of RBL services that list open proxies. SORBS was nice,
-  but it also lists dynamic IP ranges. We'd be blocking too big an audience
-  if we used it.
+* Add whitelisting functionality
+* Extend admin pages to manage blocked IP's and whitelisted IP's

@@ -1,3 +1,12 @@
+0.4:
+* Streamlined the code based on input given by Steven Lynn. Fewer queries are 
+  now used to do the same thing. Thanks!
+* New feature: keywords checking; referrers are now matched to keywords given 
+  by the site admin. If a match occurs, the client will be blocked.
+* First start of an admin area for PHPrbl, for now, only the ability to add
+  and removed keywords is present. Whitelisting and local IP blocklist management
+  will be added soon.
+
 0.3.1:
 * Fixed bug: If prechecking was enabled, it would only check against the local 
   database and skip the DNS lookups if no positives were detected. This allowed 
