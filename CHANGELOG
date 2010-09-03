@@ -1,3 +1,9 @@
+0.3.1:
+* Fixed bug: If prechecking was enabled, it would only check against the local 
+  database and skip the DNS lookups if no positives were detected. This allowed 
+  IP addresses not in the database to access the site and still leave false 
+  referrers.
+
 0.3:
 * Prechecking using the data in MySQL, no more lookups when it's not needed
 * Fix of bug, discovered by Steven Lynn, that could result in false positive.

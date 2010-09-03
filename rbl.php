@@ -6,7 +6,7 @@
 #
 # (c) Eelco Wesemann (eelco@init1.nl)
 # http://phprbl.init1.nl || http://eol.init1.nl
-# (Version 0.3, May 16 2005)
+# (Version 0.3.1, May 16 2005)
 
 # Configuration section
 
@@ -83,6 +83,9 @@ if ($mysql_enable == 1) {
 	mysql_select_db($mysql_data, $mysql_link) or die ("Unable to select database");
 }
 
+$matches = 0;
+$service = "";
+
 if ($mysql_enable == 1 && $mysql_precheck ==1) {
 	$query_count_ip = mysql_query("SELECT count(ip) AS precheck_ip,service,count FROM blocked WHERE ip='$client_ip' GROUP BY service");
 	while($row = mysql_fetch_object($query_count_ip)) {
@@ -99,35 +102,33 @@ if ($mysql_enable == 1 && $mysql_precheck ==1) {
 		mysql_close($mysql_link);
 		blockpage($client_ip,$service);
 	}
-} else {
-	$matches = 0;
-	$service = "";
-	foreach ($rbl_services as $check) {
-		$lookup_rbl_ip = implode('.', $reverse_ip) . '.' . $check;
-		$do_lookup = gethostbyname($lookup_rbl_ip);
-		if (preg_match($pattern, $do_lookup, $pat_match)) {
-			$matches++;
-			$service .= "$check;";
-		}
-	}
+}
 
-	if ($matches > 0) {
-		if ($mysql_enable == 1) {
-			$query_ip_hits = mysql_query("SELECT count FROM blocked WHERE ip='$client_ip'");
-			while($row = mysql_fetch_object($query_ip_hits)) {
-				$count = $row->count;
-			}
-			if ($count > 0) {
-				# count > 0; This means we know the IP already and have to raise it by 1
-				$count++;
-				mysql_query("UPDATE blocked SET lastseen='$timestamp', service='$service', count='$count', referer='$referer' WHERE ip='$client_ip'");
-			} else {
-				# count = 0; We haven't seen the IP address yet, and will insert it for the first time with a count of 1
-				mysql_query("INSERT INTO blocked (ip,lastseen,service,count,referer) values ('$client_ip', '$timestamp', '$service', '1', '$referer')");
-			}
-			mysql_close($mysql_link);
-		}
-		blockpage($client_ip,$service);
+foreach ($rbl_services as $check) {
+	$lookup_rbl_ip = implode('.', $reverse_ip) . '.' . $check;
+	$do_lookup = gethostbyname($lookup_rbl_ip);
+	if (preg_match($pattern, $do_lookup, $pat_match)) {
+			$matches++;
+	$service .= "$check;";
 	}
+}
+
+if ($matches > 0) {
+	if ($mysql_enable == 1) {
+		$query_ip_hits = mysql_query("SELECT count FROM blocked WHERE ip='$client_ip'");
+		while($row = mysql_fetch_object($query_ip_hits)) {
+			$count = $row->count;
+		}
+		if ($count > 0) {
+			# count > 0; This means we know the IP already and have to raise it by 1
+			$count++;
+			mysql_query("UPDATE blocked SET lastseen='$timestamp', service='$service', count='$count', referer='$referer' WHERE ip='$client_ip'");
+		} else {
+			# count = 0; We haven't seen the IP address yet, and will insert it for the first time with a count of 1
+			mysql_query("INSERT INTO blocked (ip,lastseen,service,count,referer) values ('$client_ip', '$timestamp', '$service', '1', '$referer')");
+		}
+		mysql_close($mysql_link);
+	}
+	blockpage($client_ip,$service);
 }
 ?>
