@@ -1,0 +1,55 @@
+PHPrbl
+
+What is it?
+In short: a quick and easy tool to keep clients using open proxies away from 
+          your site, and so, reducing referrer spam.
+
+How do I use it?
+Usage if fairly simple, place the file rbl.php in the document tree of your
+website and include the file rbl.php as high as possible in your PHP code:
+
+	require_once('rbl.php');
+
+Try to place this above any other PHP code since PHPrbl generates a HTTP header, and it doesn't keep an eye on any other headers.
+
+I have used PHPrbl successfully in Mambo (http://www.mamboserver.com) and in 
+b2evolution (http://b2evolution.net/). With both packages, the file rbl.php could be included in the top of the main index.php
+
+
+Logging to SQL:
+If you want to log IP addresses that have been blocked using PHPrbl, you need
+to create a table called `blocked` using the following structure:
+
+-- 
+-- Table structure for table `blocked`
+-- 
+
+CREATE TABLE `blocked` (
+  `id` int(8) NOT NULL auto_increment,
+  `ip_address` varchar(15) NOT NULL default '0.0.0.0',
+   `time` varchar(11) NOT NULL default '',
+  `spamhaus` enum('Y','N') NOT NULL default 'N',
+  `ahbl` enum('Y','N') NOT NULL default 'N',
+  PRIMARY KEY  (`id`),
+  KEY `ip_address` (`ip_address`,`spamhaus`,`ahbl`)
+) TYPE=MyISAM;
+
+
+
+--
+-- End table structure
+--
+
+
+TODO:
+* Find a bigger list of RBL services that list open proxies. SORBS was nice,
+  but it also lists dynamic IP ranges. We'd be blocking too big an audience
+  if we used it.
+* The logging to MySQL can definately be rewritten to be more eficcient and 
+  more modular, so you can add your own RBL service without needing to rewrite
+  stuff.
+* If logging to MySQL is enabled, use the timestamp as a 'lastseen' option
+  allowing us to block the IP address even before we do the DNS lookup. This
+  could speed things up, especially on servers that have DNS lookup problems.
+* (create own RBL list, to block some IP addresses that are not listed as open
+   proxies, when bored on a rainy afternoon)
