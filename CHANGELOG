@@ -1,3 +1,7 @@
+0.3:
+* Prechecking using the data in MySQL, no more lookups when it's not needed
+* Fix of bug, discovered by Steven Lynn, that could result in false positive.
+
 0.2:
 * Logging of the last referrer given by an IP
 * Rewrite of logging to MySQL which implies:

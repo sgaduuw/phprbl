@@ -41,20 +41,22 @@ CREATE TABLE `blocked` (
 -- End table structure
 --
 
-Please note that the logging to MySQL has been completely rewritten since
-version 0.1 , and the structure of the table is totally different, therefore 
-I chose to add the "DROP TABLE IF EXISTS". This means all previously gathered
-data will be lost. This also means that you will need to rewrite any queries
-you used to display blocked hosts.
+Please note that the logging to MySQL has been completely rewritten between
+version 0.1 and 0.2, and the structure of the table is totally different,
+therefore I chose to add the "DROP TABLE IF EXISTS". This means all previously
+gathered data will be lost. This also means that you will need to rewrite any
+queries you used to display blocked hosts.
+
+From version 0.3, PHPrbl support prechecking of IP addresses. This will only
+work with MySQL enabled. Set $mysql_precheck to 1 in rbl.php to enable this 
+feature.
+When enabled, the client IP address is checked against the database. Previously
+blocked IP addresses will now be blocked before a DNS lookup is done. On really
+busy servers this might improve performance.
+
 
 
 TODO:
 * Find a bigger list of RBL services that list open proxies. SORBS was nice,
   but it also lists dynamic IP ranges. We'd be blocking too big an audience
   if we used it.
-* If logging to MySQL is enabled, use the timestamp as a 'lastseen' option
-  allowing us to block the IP address even before we do the DNS lookup. This
-  could speed things up, especially on servers that have DNS lookup problems.
-* (create own RBL list, to block some IP addresses that are not listed as open
-  proxies, when bored on a rainy afternoon)
-
