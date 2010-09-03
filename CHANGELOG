@@ -1,0 +1,12 @@
+0.2:
+* Logging of the last referrer given by an IP
+* Rewrite of logging to MySQL which implies:
+  - Previous gathered data is useless
+  - IP addresses are now unique in database
+  - Hits of IP addresses in the same row
+  - Logging of the given referrer for review.
+* Added exit code telling the site is protected by PHPrbl
+  
+
+0.1:
+Initial release
