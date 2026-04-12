@@ -1,17 +1,20 @@
 <?php
 
-# remove the following line
-exit("Hehe, you haven't read the README :P");
+#
+# PHPrbl Admin Area — Configuration
+#
+# 1. Set $enable_admin_area to 1
+# 2. Change $admin_user and $admin_pass below
+# 3. Set your database credentials (same as in rbl.php)
+#
 
-# Set $enable_admin_area to 1 to enable the PHPrbl Admin Area
-# MySQL is required for this feature
 $enable_admin_area = 0;
-$admin_user = "PHPRBLADMINUSER";	# username for admin area
-$admin_pass = "PHPRBLADMINPASS";	# password for admin area
+$admin_user = "PHPRBLADMINUSER";
+$admin_pass = "PHPRBLADMINPASS";
 
-$mysql_host = "MYSQLHOST";		# mysql host (usually localhost)
-$mysql_user = "MYSQLUSER";		# mysql username
-$mysql_pass = "MYSQLPASS";		# mysql password
-$mysql_data = "MYSQLDATA";		# mysql database
+$mysql_host = "MYSQLHOST";
+$mysql_user = "MYSQLUSER";
+$mysql_pass = "MYSQLPASS";
+$mysql_data = "MYSQLDATA";
 
 ?>
