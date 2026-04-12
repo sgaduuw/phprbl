@@ -188,7 +188,7 @@ switch ($page) {
 
 	case 'keywords':
 	default:
-		$stmt = $db->prepare("SELECT id, keyword, occurances FROM keywords ORDER BY occurances DESC");
+		$stmt = $db->prepare("SELECT id, keyword, occurrences FROM keywords ORDER BY occurrences DESC");
 		$stmt->execute();
 		$rows = $stmt->fetchAll();
 		phprbl_render_page($page, $rows, $csrf_token, $message);
@@ -286,7 +286,7 @@ function phprbl_render_keywords(array $rows, string $csrf_token, callable $esc):
 	foreach ($rows as $row) {
 		$id = (int) $row->id;
 		$keyword = $esc($row->keyword);
-		$hits = (int) $row->occurances;
+		$hits = (int) $row->occurrences;
 		echo <<<HTML
 			<tr>
 				<td style="width:60px;text-align:center">{$hits}</td>

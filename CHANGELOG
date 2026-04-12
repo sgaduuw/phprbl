@@ -1,3 +1,32 @@
+1.0:
+* Requires PHP 8.1 or later
+* Replaced mysql_* extension with PDO and prepared statements (fixes all SQL
+  injection vulnerabilities and works on modern PHP)
+* Added IPv6 support for DNSBL lookups (nibble-reversed format)
+* Added IP whitelist: whitelisted IPs skip all checks entirely
+* Added log-only mode: detect and record blocks without enforcing them
+* Added auto_prepend_file support: no need to modify your site's code
+* All functions prefixed with phprbl_ to avoid name collisions
+* HTML output escaped with htmlspecialchars() throughout
+* Fixed DNSBL regex pattern (was too loose, could match unintended responses)
+* Fixed keyword matching (now uses str_contains instead of building regex from
+  user input, which could break on metacharacters)
+* Database connection fails open: if MySQL is unreachable, traffic passes through
+* Fixed column name typo: occurances → occurrences (see upgrade-0.4_to1.0.sql)
+* IP column widened to varchar(45) for IPv6 addresses
+* Referer column widened to varchar(2048)
+* Tables converted from MyISAM to InnoDB
+* Admin area rewritten:
+  - Session-based authentication (replaces HTTP Basic Auth)
+  - CSRF tokens on all actions
+  - All mutations are POST-only (no more delete-via-GET)
+  - Consolidated into single index.php
+  - New: blocked IP management with unblock
+  - New: whitelist management
+  - All output escaped, all queries use prepared statements
+* New install-1.0.sql for fresh installs
+* New upgrade-0.4_to1.0.sql for upgrading from 0.4
+
 0.4:
 * Streamlined the code based on input given by Steven Lynn. Fewer queries are 
   now used to do the same thing. Thanks!

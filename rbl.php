@@ -260,7 +260,7 @@ if ($db !== null) {
 		$referer_lower = strtolower($referer);
 		$keywordmatches = array();
 
-		$stmt = $db->prepare("SELECT keyword, occurances FROM keywords");
+		$stmt = $db->prepare("SELECT keyword, occurrences FROM keywords");
 		$stmt->execute();
 
 		while ($row = $stmt->fetch()) {
@@ -268,7 +268,7 @@ if ($db !== null) {
 			if (str_contains($referer_lower, $keyword)) {
 				$keywordmatches[] = $keyword;
 
-				$upd = $db->prepare("UPDATE keywords SET occurances = occurances + 1 WHERE keyword = :keyword");
+				$upd = $db->prepare("UPDATE keywords SET occurrences = occurrences + 1 WHERE keyword = :keyword");
 				$upd->execute(array('keyword' => $row->keyword));
 			}
 		}
