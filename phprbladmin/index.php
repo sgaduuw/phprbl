@@ -271,6 +271,7 @@ function phprbl_render_page(string $page, array $rows, string $csrf_token, strin
 		'keywords' => phprbl_render_keywords($rows, $csrf_token, $esc),
 		'blocked'  => phprbl_render_blocked($rows, $csrf_token, $esc),
 		'whitelist'=> phprbl_render_whitelist($rows, $csrf_token, $esc),
+		default    => phprbl_render_keywords($rows, $csrf_token, $esc),
 	};
 
 	echo "</body></html>";
@@ -293,7 +294,7 @@ function phprbl_render_keywords(array $rows, string $csrf_token, callable $esc):
 				<td>{$keyword}</td>
 				<td style="width:80px;text-align:center">
 					<form method="post" action="index.php?page=keywords" style="margin:0"
-						onsubmit="return confirm('Delete keyword {$keyword}?')">
+						onsubmit="return confirm('Delete this keyword?')">
 						<input type="hidden" name="action" value="delete_keyword">
 						<input type="hidden" name="id" value="{$id}">
 						<input type="hidden" name="csrf_token" value="{$csrf_token}">
@@ -339,7 +340,7 @@ function phprbl_render_blocked(array $rows, string $csrf_token, callable $esc): 
 				<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{$referer}</td>
 				<td style="width:80px;text-align:center">
 					<form method="post" action="index.php?page=blocked" style="margin:0"
-						onsubmit="return confirm('Unblock {$ip}?')">
+						onsubmit="return confirm('Unblock this IP?')">
 						<input type="hidden" name="action" value="unblock_ip">
 						<input type="hidden" name="id" value="{$id}">
 						<input type="hidden" name="csrf_token" value="{$csrf_token}">
@@ -372,7 +373,7 @@ function phprbl_render_whitelist(array $rows, string $csrf_token, callable $esc)
 				<td>{$note}</td>
 				<td style="width:80px;text-align:center">
 					<form method="post" action="index.php?page=whitelist" style="margin:0"
-						onsubmit="return confirm('Remove {$ip} from whitelist?')">
+						onsubmit="return confirm('Remove this IP from whitelist?')">
 						<input type="hidden" name="action" value="delete_whitelist">
 						<input type="hidden" name="id" value="{$id}">
 						<input type="hidden" name="csrf_token" value="{$csrf_token}">
