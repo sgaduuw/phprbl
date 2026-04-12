@@ -25,6 +25,7 @@
 # The following array contains the RBL services we want to use.
 # Spamhaus is tested to be quite fast, you can add your own,
 # or remove unwanted services from the array.
+# Note: not all DNSBL services support IPv6 lookups.
 $rbl_services = array('sbl-xbl.spamhaus.org', 'zen.spamhaus.org');
 
 # set $mysql_enable to 1 if you want to log blocked hosts to mysql.
@@ -44,6 +45,15 @@ $check_keywords = 0;
 # a bad referrer string to be added to the local database of bad IPs.
 $keywords_autoblock_mysql = 0;
 
+# set $whitelist_enable to 1 if you want to check incoming IPs against a whitelist
+# table before doing any lookups. Whitelisted IPs are never blocked.
+# This option needs $mysql_enable to be set to 1 and the whitelist table to exist.
+$whitelist_enable = 0;
+
+# set $log_only to 1 to log blocked IPs to the database without actually blocking
+# them. Useful for testing PHPrbl before going live. Requires $mysql_enable = 1.
+$log_only = 0;
+
 # if $mysql_enable is 1, you will need to enter the following information
 $mysql_host = "MYSQLHOST";		# mysql host (usually localhost)
 $mysql_user = "MYSQLUSER";		# mysql username
@@ -60,18 +70,41 @@ $client_ip = $_SERVER["REMOTE_ADDR"] ?? '';
 $referer   = $_SERVER["HTTP_REFERER"] ?? '';
 $timestamp = time();
 
-# reverse the IP address order for the lookups
-$reverse_ip = array_reverse(explode('.', $client_ip));
-
 # the default RBL services return something like 127.0.0.2 if the IP
 # address is listed, if it's not listed, gethostbyname() will return
 # the host we wanted to look up.
 $phprbl_pattern = '/^127\.0\.0\.\d+$/';
 
-# ── Block page functions ─────────────────────────────────────────────────────
+# ── Helper functions ─────────────────────────────────────────────────────────
 
 # All functions are prefixed with phprbl_ to avoid name collisions when this
 # file is auto-prepended to another application.
+
+# function phprbl_reverse_ip:
+# Reverse an IP address for DNSBL lookups.
+# IPv4: reverse the four octets (1.2.3.4 → 4.3.2.1)
+# IPv6: expand to full form, then reverse each nibble
+#        (2001:db8::1 → 1.0.0.0...8.b.d.0.1.0.0.2)
+# Returns null if the IP is not valid.
+function phprbl_reverse_ip(string $ip): ?string {
+	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+		return implode('.', array_reverse(explode('.', $ip)));
+	}
+
+	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+		# expand the IPv6 address to its full 32-nibble hex representation
+		$packed = inet_pton($ip);
+		if ($packed === false) {
+			return null;
+		}
+		$hex = bin2hex($packed);
+		# split into individual nibbles, reverse, and dot-separate
+		$nibbles = str_split($hex);
+		return implode('.', array_reverse($nibbles));
+	}
+
+	return null;
+}
 
 # function phprbl_blockpage:
 # arguments: client ip address, services IP is listed in.
@@ -118,7 +151,31 @@ function phprbl_blockkeyword(array $keywordmatches): never {
 	exit("This site is protected against open proxies and abusive hosts by <a href=\"https://github.com/eelcowesemann/phprbl\">PHPrbl</a>.\n</body></html>");
 }
 
+# function phprbl_log_block:
+# Log a block event to the database (insert or update).
+function phprbl_log_block(PDO $db, string $ip, int $timestamp, string $service, string $referer, int $visits): void {
+	if ($visits > 0) {
+		$stmt = $db->prepare("UPDATE blocked SET lastseen = :lastseen, service = :service, visits = visits + 1, referer = :referer WHERE ip = :ip");
+	} else {
+		$stmt = $db->prepare("INSERT INTO blocked (ip, lastseen, service, visits, referer) VALUES (:ip, :lastseen, :service, 1, :referer)");
+	}
+	$stmt->execute(array(
+		'ip'       => $ip,
+		'lastseen' => $timestamp,
+		'service'  => $service,
+		'referer'  => $referer,
+	));
+}
+
 # ── Main logic ───────────────────────────────────────────────────────────────
+
+# reverse the IP address for DNSBL lookups (supports both IPv4 and IPv6)
+$phprbl_reversed = phprbl_reverse_ip($client_ip);
+
+# if the IP is not valid, there's nothing we can do
+if ($phprbl_reversed === null) {
+	return;
+}
 
 $matches = 0;
 $service = "";
@@ -143,6 +200,23 @@ if ($mysql_enable == 1) {
 		$db = null;
 	}
 }
+
+# ── Whitelist check ──────────────────────────────────────────────────────────
+
+if ($db !== null && $whitelist_enable == 1) {
+	try {
+		$stmt = $db->prepare("SELECT id FROM whitelist WHERE ip = :ip");
+		$stmt->execute(array('ip' => $client_ip));
+		if ($stmt->fetch()) {
+			# whitelisted — skip all checks entirely
+			return;
+		}
+	} catch (PDOException $e) {
+		# whitelist table probably doesn't exist; continue without it
+	}
+}
+
+# ── MySQL precheck ───────────────────────────────────────────────────────────
 
 if ($db !== null) {
 	if ($mysql_precheck == 0) {
@@ -173,7 +247,10 @@ if ($db !== null) {
 				'ip'       => $client_ip,
 			));
 
-			phprbl_blockpage($client_ip, $service);
+			if ($log_only == 0) {
+				phprbl_blockpage($client_ip, $service);
+			}
+			return;
 		}
 	}
 
@@ -207,7 +284,10 @@ if ($db !== null) {
 					'referer'  => $blockreason,
 				));
 			}
-			phprbl_blockkeyword($keywordmatches);
+			if ($log_only == 0) {
+				phprbl_blockkeyword($keywordmatches);
+			}
+			return;
 		}
 	}
 }
@@ -215,9 +295,9 @@ if ($db !== null) {
 # ── DNSBL lookups ────────────────────────────────────────────────────────────
 
 foreach ($rbl_services as $check) {
-	$lookup_rbl_ip = implode('.', $reverse_ip) . '.' . $check;
-	$do_lookup = gethostbyname($lookup_rbl_ip);
-	if (preg_match($phprbl_pattern, $do_lookup)) {
+	$lookup_host = $phprbl_reversed . '.' . $check;
+	$result = gethostbyname($lookup_host);
+	if (preg_match($phprbl_pattern, $result)) {
 		$matches++;
 		$service .= "$check;";
 	}
@@ -225,25 +305,9 @@ foreach ($rbl_services as $check) {
 
 if ($matches > 0) {
 	if ($db !== null) {
-		if ($visits > 0) {
-			# visits > 0; This means we know the IP already and have to raise it by 1
-			$stmt = $db->prepare("UPDATE blocked SET lastseen = :lastseen, service = :service, visits = visits + 1, referer = :referer WHERE ip = :ip");
-			$stmt->execute(array(
-				'lastseen' => $timestamp,
-				'service'  => $service,
-				'referer'  => $referer,
-				'ip'       => $client_ip,
-			));
-		} else {
-			# visits = 0; We haven't seen the IP address yet, insert it for the first time
-			$stmt = $db->prepare("INSERT INTO blocked (ip, lastseen, service, visits, referer) VALUES (:ip, :lastseen, :service, 1, :referer)");
-			$stmt->execute(array(
-				'ip'       => $client_ip,
-				'lastseen' => $timestamp,
-				'service'  => $service,
-				'referer'  => $referer,
-			));
-		}
+		phprbl_log_block($db, $client_ip, $timestamp, $service, $referer, $visits);
 	}
-	phprbl_blockpage($client_ip, $service);
+	if ($log_only == 0) {
+		phprbl_blockpage($client_ip, $service);
+	}
 }
